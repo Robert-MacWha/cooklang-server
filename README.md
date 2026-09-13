@@ -1,42 +1,51 @@
-# sv
+# cooklang-server
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+> NOTE: This server was primarily vibe-coded with heavy use of claude code and built for personal use.
 
-## Creating a project
+A minimal recipe web server for browsing [cooklang](https://cooklang.org) recipes.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## NixOS
 
-```sh
-# create a new project
-npx sv create my-app
+Add as a flake input and enable the service:
+
+```nix
+{
+  inputs.cooklang-server.url = "github:<you>/cooklang-server";
+
+  outputs = { nixpkgs, cooklang-server, ... }: {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+      modules = [
+        cooklang-server.nixosModules.default
+        {
+          services.cooklang-server = {
+            enable = true;
+            port = 3000;
+            openFirewall = true;
+
+            # Recipes live in /var/lib/cooklang-server/recipes, hard-reset
+            # from this repo on a timer.
+            repo = "https://github.com/<you>/recipes.git";
+            ref = "main";
+            syncInterval = "hourly";
+          };
+        }
+      ];
+    };
+  };
+}
 ```
 
-To recreate this project with the same configuration:
+## Development
 
 ```sh
-# recreate this project
-bun x sv@0.17.0 create --template minimal --types ts --add tailwindcss="plugins:none" sveltekit-adapter="adapter:node" --install bun .
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+nix develop
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
-
-To create a production version of your app:
+`RECIPES_DIR` (env var, default `./recipes`) controls where recipes are loaded from.
 
 ```sh
+npm run check
 npm run build
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

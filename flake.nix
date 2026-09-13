@@ -1,4 +1,6 @@
 {
+  description = "A minimal cooklang recipe web server";
+
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.systems.url = "github:nix-systems/default";
   inputs.flake-utils = {
@@ -7,13 +9,15 @@
   };
 
   outputs =
-    { nixpkgs, flake-utils, ... }:
+    { self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
+        packages.default = pkgs.callPackage ./nix/package.nix { };
+
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.bashInteractive
@@ -21,5 +25,8 @@
           ];
         };
       }
-    );
+    )
+    // {
+      nixosModules.default = import ./nix/module.nix self;
+    };
 }
