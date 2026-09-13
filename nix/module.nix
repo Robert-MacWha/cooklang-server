@@ -131,7 +131,7 @@ in
           git -C "${recipesDir}" reset --hard "origin/${cfg.ref}"
           git -C "${recipesDir}" clean -fdx
         else
-          rm -rf "${recipesDir}"
+          find "${recipesDir}" -mindepth 1 -delete
           git clone --depth 1 --branch "${cfg.ref}" "${cfg.repo}" "${recipesDir}"
         fi
       '';
