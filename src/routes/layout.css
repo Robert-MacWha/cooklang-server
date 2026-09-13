@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+
+@theme {
+	/* Central accent color - change this one value to re-theme the app. */
+	--color-accent: #592c56;
+}
