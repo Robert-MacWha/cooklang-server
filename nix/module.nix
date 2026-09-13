@@ -84,6 +84,39 @@ in
         User = "cooklang-server";
         Group = "cooklang-server";
         Restart = "on-failure";
+
+        # Node's JIT needs W+X pages, so MemoryDenyWriteExecute is deliberately not set.
+        CapabilityBoundingSet = [ "" ] ++ lib.optional (cfg.port < 1024) "CAP_NET_BIND_SERVICE";
+        AmbientCapabilities = lib.optional (cfg.port < 1024) "CAP_NET_BIND_SERVICE";
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        ProtectClock = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectControlGroups = true;
+        ProtectProc = "invisible";
+        ProcSubset = "pid";
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        LockPersonality = true;
+        RemoveIPC = true;
+        UMask = "0077";
+        SystemCallArchitectures = "native";
+        SystemCallFilter = [
+          "@system-service"
+          "~@privileged"
+          "~@resources"
+        ];
       };
     };
 
@@ -93,7 +126,6 @@ in
 
       script = ''
         set -euo pipefail
-        mkdir -p "$(dirname "${recipesDir}")"
         if [ -d "${recipesDir}/.git" ]; then
           git -C "${recipesDir}" fetch --depth 1 origin "${cfg.ref}"
           git -C "${recipesDir}" reset --hard "origin/${cfg.ref}"
@@ -108,6 +140,39 @@ in
         Type = "oneshot";
         User = "cooklang-server";
         Group = "cooklang-server";
+        StateDirectory = "cooklang-server/recipes";
+
+        CapabilityBoundingSet = [ "" ];
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        ProtectClock = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectControlGroups = true;
+        ProtectProc = "invisible";
+        ProcSubset = "pid";
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+          "AF_UNIX"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        LockPersonality = true;
+        RemoveIPC = true;
+        UMask = "0077";
+        SystemCallArchitectures = "native";
+        SystemCallFilter = [
+          "@system-service"
+          "~@privileged"
+          "~@resources"
+        ];
       };
     };
 
