@@ -15,14 +15,12 @@
 {#each sections as section, sIndex}
 	{#if section.name}
 		<h2 class="mt-6 mb-2 text-base font-medium text-slate-800">{section.name}</h2>
-	{:else if sections.length > 1}
-		<h2 class="mt-6 mb-2 text-base font-medium text-slate-800">Section {sIndex + 1}</h2>
 	{/if}
 
 	<ol class="space-y-4">
 		{#each section.content as content, cIndex}
 			{#if content.type === 'text'}
-				<p class="text-sm text-slate-500 italic">{content.value}</p>
+				<p class="pl-10 text-sm text-slate-500 italic">{content.value}</p>
 			{:else}
 				{@const key = `${sIndex}:${cIndex}`}
 				<li>
@@ -46,8 +44,12 @@
 										>{item.name ? `${item.name}: ` : ''}{item.quantity}</span
 									>
 								{:else}<span class="font-bold text-slate-900"
-										>{item.name}{item.quantity ? ` (${item.quantity})` : ''}</span
-									>
+										>{item.quantity ? `${item.quantity} ` : ''}</span
+									>{#if item.type === 'ingredient' && item.recipeSlug}<a
+											href="/recipe/{item.recipeSlug}"
+											onclick={(e) => e.stopPropagation()}
+											class="font-bold text-blue-600 underline">{item.name}</a
+										>{:else}<span class="font-bold text-slate-900">{item.name}</span>{/if}
 								{/if}
 							{/each}
 						</p>

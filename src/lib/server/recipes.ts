@@ -77,6 +77,7 @@ export function listRecipes(): RecipeSummary[] {
 			slug,
 			title: recipe.title || slug,
 			tags: [...recipe.tags],
+			cuisine: rawMetadataString(recipe.rawMetadata, 'cuisine'),
 			time: formatTime(recipe.time),
 			starred: isStarred(recipe.rawMetadata)
 		};
@@ -91,15 +92,18 @@ export function listRecipes(): RecipeSummary[] {
 function groupedLines<T extends Ingredient | Cookware>(
 	grouped: [T, GroupedQuantity][],
 	displayName: (x: T) => string,
-	shouldList: (x: T) => boolean
+	shouldList: (x: T) => boolean,
+	recipeSlug: (x: T) => string | null = () => null
 ): IngredientLine[] {
 	return grouped
 		.filter(([item]) => shouldList(item))
 		.map(([item, quantity]) => ({
 			name: displayName(item),
 			quantity: grouped_quantity_is_empty(quantity) ? null : grouped_quantity_display(quantity),
-			note: (item as { note: string | null }).note
-		}));
+			note: (item as { note: string | null }).note,
+			recipeSlug: recipeSlug(item)
+		}))
+		.sort((a, b) => Number(!!b.recipeSlug) - Number(!!a.recipeSlug));
 }
 
 interface RecipeComponents {
@@ -108,7 +112,21 @@ interface RecipeComponents {
 	timers: Timer[];
 }
 
-function mapStepItem(item: Item, recipe: RecipeComponents): StepItem {
+/** Resolves an ingredient's recipe reference (e.g. `@./puff-pastry{}`) to a recipe slug. */
+function resolveRecipeReference(
+	recipeDir: string,
+	reference: NonNullable<Ingredient['reference']>
+): string | null {
+	const relativePath = [...reference.components, reference.name].join('/');
+	const targetPath = resolve(recipeDir, `${relativePath}.cook`);
+	const rel = relative(RECIPES_DIR, targetPath);
+	if (rel.startsWith('..') || rel.split(sep).includes('..') || !existsSync(targetPath)) {
+		return null;
+	}
+	return pathToSlug(targetPath);
+}
+
+function mapStepItem(item: Item, recipe: RecipeComponents, recipeDir: string): StepItem {
 	switch (item.type) {
 		case 'text':
 			return { type: 'text', value: item.value };
@@ -117,7 +135,10 @@ function mapStepItem(item: Item, recipe: RecipeComponents): StepItem {
 			return {
 				type: 'ingredient',
 				name: ingredient_display_name(ingredient),
-				quantity: ingredient.quantity ? quantity_display(ingredient.quantity) : null
+				quantity: ingredient.quantity ? quantity_display(ingredient.quantity) : null,
+				recipeSlug: ingredient.reference
+					? resolveRecipeReference(recipeDir, ingredient.reference)
+					: null
 			};
 		}
 		case 'cookware': {
@@ -141,7 +162,7 @@ function mapStepItem(item: Item, recipe: RecipeComponents): StepItem {
 	}
 }
 
-function mapSections(sections: Section[], recipe: RecipeComponents) {
+function mapSections(sections: Section[], recipe: RecipeComponents, recipeDir: string) {
 	return sections.map((section) => ({
 		name: section.name ?? null,
 		content: section.content.map((content): SectionContent => {
@@ -152,7 +173,7 @@ function mapSections(sections: Section[], recipe: RecipeComponents) {
 			return {
 				type: 'step',
 				number: step.number,
-				items: step.items.map((item) => mapStepItem(item, recipe))
+				items: step.items.map((item) => mapStepItem(item, recipe, recipeDir))
 			};
 		})
 	}));
@@ -171,6 +192,8 @@ export function loadRecipe(slug: string, scale: number | null): RecipeDetail {
 			? rawImage
 			: `/api/image?slug=${encodeURIComponent(slug)}`;
 
+	const recipeDir = dirname(filePath);
+
 	return {
 		title: recipe.title || slug,
 		description: recipe.description ?? null,
@@ -184,9 +207,15 @@ export function loadRecipe(slug: string, scale: number | null): RecipeDetail {
 		time: formatTime(recipe.time),
 		servings: formatServings(recipe.servings),
 		imageUrl,
-		ingredients: groupedLines(recipe.groupedIngredients, ingredient_display_name, ingredient_should_be_listed),
+		ingredients: groupedLines(
+			recipe.groupedIngredients,
+			ingredient_display_name,
+			ingredient_should_be_listed,
+			(ingredient) =>
+				ingredient.reference ? resolveRecipeReference(recipeDir, ingredient.reference) : null
+		),
 		cookware: groupedLines(recipe.groupedCookware, cookware_display_name, cookware_should_be_listed),
-		sections: mapSections(recipe.sections, recipe)
+		sections: mapSections(recipe.sections, recipe, recipeDir)
 	};
 }
 

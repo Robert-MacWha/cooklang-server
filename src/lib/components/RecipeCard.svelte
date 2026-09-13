@@ -12,8 +12,13 @@
 	{#if recipe.time}
 		<p class="mt-1 text-sm text-slate-500">{recipe.time}</p>
 	{/if}
-	{#if recipe.tags.length}
+	{#if recipe.cuisine || recipe.tags.length}
 		<div class="mt-2 flex flex-wrap gap-1.5">
+			{#if recipe.cuisine}
+				<span class="rounded-full bg-accent px-2 py-0.5 text-sm text-white capitalize"
+					>{recipe.cuisine}</span
+				>
+			{/if}
 			{#each recipe.tags as tag}
 				<span class="rounded-full bg-accent px-2 py-0.5 text-sm text-white capitalize">{tag}</span
 				>

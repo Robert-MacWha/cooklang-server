@@ -32,7 +32,15 @@
 								>{item.quantity}</span
 							>
 						{/if}
-						{item.name}
+						{#if item.recipeSlug}
+							<a
+								href="/recipe/{item.recipeSlug}"
+								onclick={(e) => e.stopPropagation()}
+								class="text-blue-600 underline">{item.name}</a
+							>
+						{:else}
+							{item.name}
+						{/if}
 						{#if item.note}
 							<span class="text-slate-400">({item.note})</span>
 						{/if}

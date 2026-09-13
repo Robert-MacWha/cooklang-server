@@ -2,6 +2,7 @@ export interface RecipeSummary {
 	slug: string;
 	title: string;
 	tags: string[];
+	cuisine: string | null;
 	time: string | null;
 	starred: boolean;
 }
@@ -10,11 +11,13 @@ export interface IngredientLine {
 	name: string;
 	quantity: string | null;
 	note: string | null;
+	recipeSlug: string | null;
 }
 
 export type StepItem =
 	| { type: 'text'; value: string }
-	| { type: 'ingredient' | 'cookware'; name: string; quantity: string | null }
+	| { type: 'ingredient'; name: string; quantity: string | null; recipeSlug: string | null }
+	| { type: 'cookware'; name: string; quantity: string | null }
 	| { type: 'timer'; name: string | null; quantity: string | null };
 
 export type SectionContent =
