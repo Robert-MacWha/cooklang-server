@@ -61,7 +61,7 @@
 						All
 					</label>
 					{#each allTags as tag}
-						<label class="flex items-center gap-2 rounded p-2 hover:bg-slate-100">
+						<label class="flex items-center gap-2 rounded p-2 capitalize hover:bg-slate-100">
 							<input
 								type="checkbox"
 								checked={selectedTags.has(tag)}

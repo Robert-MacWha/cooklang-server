@@ -3,6 +3,7 @@ export interface RecipeSummary {
 	title: string;
 	tags: string[];
 	time: string | null;
+	starred: boolean;
 }
 
 export interface IngredientLine {
@@ -29,6 +30,8 @@ export interface RecipeDetail {
 	title: string;
 	description: string | null;
 	tags: string[];
+	starred: boolean;
+	cuisine: string | null;
 	author: string | null;
 	authorUrl: string | null;
 	source: string | null;

@@ -54,9 +54,22 @@ function pathToSlug(filePath: string): string {
 	return relative(RECIPES_DIR, filePath).replace(/\.cook$/, '').split(sep).join('/');
 }
 
+// Raw metadata values come through as whatever YAML type they were written as
+// (e.g. `starred: true` is a boolean, `cuisine: Japanese` is a string), so this
+// coerces to a string before we do any string-only operations on it.
+function rawMetadataString(rawMetadata: Map<string, unknown>, key: string): string | null {
+	const value = rawMetadata.get(key);
+	return value == null ? null : String(value);
+}
+
+function isStarred(rawMetadata: Map<string, unknown>): boolean {
+	const value = rawMetadataString(rawMetadata, 'starred')?.trim().toLowerCase();
+	return value === 'true' || value === 'yes' || value === '1';
+}
+
 export function listRecipes(): RecipeSummary[] {
 	const parser = new CooklangParser();
-	return findCookFiles(RECIPES_DIR).map((filePath) => {
+	const recipes = findCookFiles(RECIPES_DIR).map((filePath) => {
 		const text = readFileSync(filePath, 'utf-8');
 		const [recipe] = parser.parse(text, null);
 		const slug = pathToSlug(filePath);
@@ -64,8 +77,14 @@ export function listRecipes(): RecipeSummary[] {
 			slug,
 			title: recipe.title || slug,
 			tags: [...recipe.tags],
-			time: formatTime(recipe.time)
+			time: formatTime(recipe.time),
+			starred: isStarred(recipe.rawMetadata)
 		};
+	});
+
+	return recipes.sort((a, b) => {
+		const starDiff = Number(b.starred) - Number(a.starred);
+		return starDiff || a.title.localeCompare(b.title);
 	});
 }
 
@@ -145,7 +164,7 @@ export function loadRecipe(slug: string, scale: number | null): RecipeDetail {
 	const parser = new CooklangParser();
 	const [recipe] = parser.parse(text, scale);
 
-	const rawImage = recipe.rawMetadata.get('image');
+	const rawImage = rawMetadataString(recipe.rawMetadata, 'image');
 	const imageUrl = !rawImage
 		? null
 		: /^https?:\/\//.test(rawImage)
@@ -156,6 +175,8 @@ export function loadRecipe(slug: string, scale: number | null): RecipeDetail {
 		title: recipe.title || slug,
 		description: recipe.description ?? null,
 		tags: [...recipe.tags],
+		starred: isStarred(recipe.rawMetadata),
+		cuisine: rawMetadataString(recipe.rawMetadata, 'cuisine'),
 		author: nameAndUrlLabel(recipe.author),
 		authorUrl: recipe.author?.url ?? null,
 		source: sourceLabel(recipe.source),
@@ -176,7 +197,7 @@ export function getRecipeImagePath(slug: string): string | null {
 	const parser = new CooklangParser();
 	const [recipe] = parser.parse(text, null);
 
-	const rawImage = recipe.rawMetadata.get('image');
+	const rawImage = rawMetadataString(recipe.rawMetadata, 'image');
 	if (!rawImage || /^https?:\/\//.test(rawImage)) return null;
 
 	const imagePath = resolve(dirname(filePath), rawImage);

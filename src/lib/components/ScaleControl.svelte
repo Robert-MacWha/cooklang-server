@@ -18,7 +18,7 @@
 		type="button"
 		onclick={() => nudge(-STEP)}
 		aria-label="Decrease scale"
-		class="flex h-8 w-8 items-center justify-center bg-accent text-base font-bold text-white active:bg-accent/80"
+		class="flex h-7 w-7 items-center justify-center bg-accent text-sm font-bold text-white active:bg-accent/80"
 	>
 		−
 	</button>
@@ -28,13 +28,13 @@
 		min={MIN}
 		value={scale}
 		oninput={onInput}
-		class="h-8 w-12 text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+		class="h-7 w-10 text-center text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 	/>
 	<button
 		type="button"
 		onclick={() => nudge(STEP)}
 		aria-label="Increase scale"
-		class="flex h-8 w-8 items-center justify-center bg-accent text-base font-bold text-white active:bg-accent/80"
+		class="flex h-7 w-7 items-center justify-center bg-accent text-sm font-bold text-white active:bg-accent/80"
 	>
 		+
 	</button>

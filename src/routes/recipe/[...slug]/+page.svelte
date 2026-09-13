@@ -3,7 +3,6 @@
 	import Frontmatter from '$lib/components/Frontmatter.svelte';
 	import IngredientList from '$lib/components/IngredientList.svelte';
 	import StepList from '$lib/components/StepList.svelte';
-	import ScaleControl from '$lib/components/ScaleControl.svelte';
 	import type { RecipeDetail } from '$lib/types';
 
 	let recipe = $state<RecipeDetail | null>(null);
@@ -30,10 +29,7 @@
 	{:else if recipe}
 		<div class="space-y-6">
 			<div class="rounded-xl bg-white p-4 ring-1 ring-slate-200 sm:p-6">
-				<Frontmatter {recipe} />
-				<div class="mt-6">
-					<ScaleControl {scale} onchange={(s) => (scale = s)} />
-				</div>
+				<Frontmatter {recipe} {scale} onScaleChange={(s) => (scale = s)} />
 			</div>
 
 			<div class="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_2fr]">
