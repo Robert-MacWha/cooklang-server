@@ -10,7 +10,7 @@ Add as a flake input and enable the service:
 
 ```nix
 {
-  inputs.cooklang-server.url = "github:<you>/cooklang-server";
+  inputs.cooklang-server.url = "github:Robert-MacWha/cooklang-server";
 
   outputs = { nixpkgs, cooklang-server, ... }: {
     nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
