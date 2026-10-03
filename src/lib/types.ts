@@ -5,6 +5,7 @@ export interface RecipeSummary {
 	cuisine: string | null;
 	time: string | null;
 	starred: boolean;
+	broken: boolean;
 }
 
 export interface IngredientLine {

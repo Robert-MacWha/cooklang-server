@@ -1,5 +1,5 @@
 import { error, json } from '@sveltejs/kit';
-import { loadRecipe } from '$lib/server/recipes';
+import { loadRecipe, RecipeParseError } from '$lib/server/recipes';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ params, url }) => {
@@ -8,7 +8,8 @@ export const GET: RequestHandler = ({ params, url }) => {
 
 	try {
 		return json(loadRecipe(params.slug, scale));
-	} catch {
+	} catch (e) {
+		if (e instanceof RecipeParseError) error(422, e.message);
 		error(404, 'Recipe not found');
 	}
 };

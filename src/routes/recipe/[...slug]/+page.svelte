@@ -7,25 +7,26 @@
 
 	let recipe = $state<RecipeDetail | null>(null);
 	let scale = $state(1);
-	let notFound = $state(false);
+	let loadError = $state<string | null>(null);
 
 	$effect(() => {
 		const slug = page.params.slug;
 		const currentScale = scale;
-		notFound = false;
-		fetch(`/api/recipes/${slug}?scale=${currentScale}`).then((r) => {
+		loadError = null;
+		fetch(`/api/recipes/${slug}?scale=${currentScale}`).then(async (r) => {
 			if (!r.ok) {
-				notFound = true;
+				const body = await r.json().catch(() => null);
+				loadError = body?.message ?? 'Recipe not found.';
 				return;
 			}
-			r.json().then((d) => (recipe = d));
+			recipe = await r.json();
 		});
 	});
 </script>
 
 <div class="mx-auto max-w-4xl px-4 py-8">
-	{#if notFound}
-		<p class="text-sm text-slate-500">Recipe not found.</p>
+	{#if loadError}
+		<p class="text-sm text-slate-500">{loadError}</p>
 	{:else if recipe}
 		<div class="space-y-6">
 			<div class="rounded-xl bg-white p-4 ring-1 ring-slate-200 sm:p-6">

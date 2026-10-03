@@ -69,18 +69,24 @@ function isStarred(rawMetadata: Map<string, unknown>): boolean {
 
 export function listRecipes(): RecipeSummary[] {
 	const parser = new CooklangParser();
-	const recipes = findCookFiles(RECIPES_DIR).map((filePath) => {
-		const text = readFileSync(filePath, 'utf-8');
-		const [recipe] = parser.parse(text, null);
+	const recipes = findCookFiles(RECIPES_DIR).map((filePath): RecipeSummary => {
 		const slug = pathToSlug(filePath);
-		return {
-			slug,
-			title: recipe.title || slug,
-			tags: [...recipe.tags],
-			cuisine: rawMetadataString(recipe.rawMetadata, 'cuisine'),
-			time: formatTime(recipe.time),
-			starred: isStarred(recipe.rawMetadata)
-		};
+		try {
+			const text = readFileSync(filePath, 'utf-8');
+			const [recipe] = parser.parse(text, null);
+			return {
+				slug,
+				title: recipe.title || slug,
+				tags: [...recipe.tags],
+				cuisine: rawMetadataString(recipe.rawMetadata, 'cuisine'),
+				time: formatTime(recipe.time),
+				starred: isStarred(recipe.rawMetadata),
+				broken: false
+			};
+		} catch {
+			// One malformed file shouldn't take down the whole listing.
+			return { slug, title: slug, tags: [], cuisine: null, time: null, starred: false, broken: true };
+		}
 	});
 
 	return recipes.sort((a, b) => {
@@ -179,9 +185,27 @@ function mapSections(sections: Section[], recipe: RecipeComponents, recipeDir: s
 	}));
 }
 
+/** Thrown when a `.cook` file exists but can't be parsed, so callers can tell it from a missing file. */
+export class RecipeParseError extends Error {}
+
 export function loadRecipe(slug: string, scale: number | null): RecipeDetail {
 	const filePath = slugToPath(slug);
 	const text = readFileSync(filePath, 'utf-8');
+	try {
+		// The parser traps on some malformed input (e.g. an unnamed `@{1 cup}`)
+		// rather than reporting it, and it can do so from any of the wasm calls below.
+		return buildRecipeDetail(text, filePath, slug, scale);
+	} catch (cause) {
+		throw new RecipeParseError(`Failed to parse ${slug}.cook`, { cause });
+	}
+}
+
+function buildRecipeDetail(
+	text: string,
+	filePath: string,
+	slug: string,
+	scale: number | null
+): RecipeDetail {
 	const parser = new CooklangParser();
 	const [recipe] = parser.parse(text, scale);
 
@@ -224,9 +248,15 @@ export function getRecipeImagePath(slug: string): string | null {
 	const filePath = slugToPath(slug);
 	const text = readFileSync(filePath, 'utf-8');
 	const parser = new CooklangParser();
-	const [recipe] = parser.parse(text, null);
 
-	const rawImage = rawMetadataString(recipe.rawMetadata, 'image');
+	let rawImage: string | null;
+	try {
+		const [recipe] = parser.parse(text, null);
+		rawImage = rawMetadataString(recipe.rawMetadata, 'image');
+	} catch {
+		return null;
+	}
+
 	if (!rawImage || /^https?:\/\//.test(rawImage)) return null;
 
 	const imagePath = resolve(dirname(filePath), rawImage);
